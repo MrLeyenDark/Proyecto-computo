@@ -48,7 +48,8 @@ function drawMandala(result, operation) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Obtener la cantidad de vectores del primer número ingresado
-    const numVectors = Math.max(1, Math.min(99, parseInt(document.getElementById('num1').value))) || 6;
+    const numVectors1 = Math.max(1, Math.min(99, parseInt(document.getElementById('num1').value))) || 6;
+    const numVectors2 = Math.max(1, Math.min(99, parseInt(document.getElementById('num2').value))) || 6;
     const length = 300; // Longitud de cada vector
     const radius = length; // Radio del círculo 
 
@@ -59,12 +60,14 @@ function drawMandala(result, operation) {
     ctx.lineWidth = 2;
     ctx.stroke();
 
+    const points = [];
+
     // Dibuja vectores según la operación
     switch (operation) {
         case '+':
             // Dibuja un patrón de estrellas
-            for (let i = 0; i < numVectors; i++) {
-                const angle = (i * Math.PI * 2) / numVectors;
+            for (let i = 0; i < numVectors1; i++) {
+                const angle = (i * Math.PI * 2) / numVectors1;
                 const x = centerX + Math.cos(angle) * length;
                 const y = centerY + Math.sin(angle) * length;
 
@@ -88,8 +91,8 @@ function drawMandala(result, operation) {
 
         case '-':
             // Dibuja un patrón de espirales
-            for (let i = 0; i < numVectors; i++) {
-                const angle = (i * Math.PI * 2) / numVectors;
+            for (let i = 0; i < numVectors1; i++) {
+                const angle = (i * Math.PI * 2) / numVectors1;
                 const x = centerX + Math.cos(angle) * length;
                 const y = centerY + Math.sin(angle) * length;
 
@@ -111,49 +114,92 @@ function drawMandala(result, operation) {
             }
             break;
 
-        case '*':
-            // Dibuja un patrón de rayos
-            for (let i = 0; i < numVectors; i++) {
-                const angle = (i * Math.PI * 2) / numVectors;
-                const x = centerX + Math.cos(angle) * length;
-                const y = centerY + Math.sin(angle) * length;
-        
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                ctx.lineTo(x, y);
-                ctx.strokeStyle = 'blue';
-                ctx.lineWidth = 1;
-                ctx.stroke();
-        
-                // Dibuja líneas adicionales para crear un patrón
-                for (let j = 0; j < num2; j++) { // num2 es el segundo número ingresado
-                    const randomAngle = angle + (Math.random() * Math.PI / 10) - (Math.PI / 20); // Ángulo aleatorio
-                    const lineLength = Math.random() * (length / 2); // Longitud aleatoria de la línea
-                    const lineX = x + Math.cos(randomAngle) * lineLength;
-                    const lineY = y + Math.sin(randomAngle) * lineLength;
-        
+            case '*':
+                // Dibuja vectores según el primer número (num1)
+                const points = []; // Almacenar las posiciones de los extremos de los vectores
+                for (let i = 0; i < numVectors1; i++) {
+                    const angle = (i * Math.PI * 2) / numVectors1;
+                    const xEnd = centerX + Math.cos(angle) * length;
+                    const yEnd = centerY + Math.sin(angle) * length;
+            
+                    // Almacenar la posición del extremo
+                    points.push({ x: xEnd, y: yEnd });
+            
+                    // Dibuja el vector
                     ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    ctx.lineTo(lineX, lineY);
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(xEnd, yEnd);
                     ctx.strokeStyle = 'blue';
                     ctx.lineWidth = 1;
                     ctx.stroke();
                 }
-            }
-            break;
-
-        case '/':
-            // Dibuja un patrón de círculos concéntricos
-            for (let i = 1; i <= numVectors; i++) {
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, (length / numVectors) * i, 0, Math.PI * 2);
-                ctx.strokeStyle = 'purple';
+            
+                // Generar puntos a lo largo de cada vector
+                const allPoints = [];
+                for (let i = 0; i < numVectors1; i++) {
+                    const angle = (i * Math.PI * 2) / numVectors1;
+            
+                    for (let j = 0; j < numVectors2; j++) {
+                        const ratio = j / (numVectors2 - 1); // Proporción a lo largo del vector (ajustado para incluir el extremo)
+                        const randomX = centerX + Math.cos(angle) * length * ratio;
+                        const randomY = centerY + Math.sin(angle) * length * ratio;
+            
+                        allPoints.push({ x: randomX, y: randomY });
+                    }
+                }
+            
+                // Conectar los puntos generados con los más cercanos dentro de un rango
+                ctx.strokeStyle = 'red'; // Color para las conexiones
                 ctx.lineWidth = 1;
-                ctx.stroke();
-            }
-            break;
-
-        default:
+            
+                const connectionDistance = 100; // Distancia máxima para conectar puntos
+            
+                for (let i = 0; i < allPoints.length; i++) {
+                    const currentPoint = allPoints[i];
+            
+                    // Conectar a otros puntos dentro de la distancia especificada
+                    for (let j = 0; j < allPoints.length; j++) {
+                        if (i !== j) {
+                            const otherPoint = allPoints[j];
+                            const distance = Math.sqrt(Math.pow(currentPoint.x - otherPoint.x, 2) + Math.pow(currentPoint.y - otherPoint.y, 2));
+            
+                            // Conectar si la distancia está dentro del rango especificado
+                            if (distance <= connectionDistance) {
+                                ctx.beginPath();
+                                ctx.moveTo(currentPoint.x, currentPoint.y);
+                                ctx.lineTo(otherPoint.x, otherPoint.y);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+                break;
+                case '/':
+                    // Dibuja un patrón de círculos concéntricos
+                    for (let i = 1; i <= numVectors1; i++) {
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, (length / numVectors1) * i, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'purple';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                
+                    // Dibuja espirales dentro del círculo más grande
+                    const maxRadius = length; // Radio del círculo más grande
+                    for (let i = 0; i < numVectors2; i++) { // numVectors2 representa la cantidad de espirales
+                        ctx.beginPath();
+                        for (let t = 0; t < 10; t += 0.1) { // Controla la densidad de la espiral
+                            const angle = i * (Math.PI * 2 / numVectors2) + t; // Ángulo para la espiral
+                            const radius = (t * maxRadius) / 10; // Aumenta el radio, asegurando que no exceda el máximo
+                            const x = centerX + Math.cos(angle) * radius;
+                            const y = centerY + Math.sin(angle) * radius;
+                            ctx.lineTo(x, y);
+                        }
+                        ctx.strokeStyle = 'purple'; // Color de las espirales
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                    break;
             console.log('Operación no válida');
-    }
-    }
+    }   
+}
